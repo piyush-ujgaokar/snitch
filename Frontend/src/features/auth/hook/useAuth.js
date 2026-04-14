@@ -15,5 +15,6 @@ export const useAuth = () => {
         dispatch(setUser(data.user))
     }
 
+    return {handleRegister}
 
 }
