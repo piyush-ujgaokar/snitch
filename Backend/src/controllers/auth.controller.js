@@ -25,7 +25,7 @@ async function sendTokenResponse(user,res,message){
 
 
 export const register=async(req,res)=>{
-    const {email,contact,fullname,password}=req.body
+    const {email,contact,fullname,password,isSeller}=req.body
 
     try {
 
@@ -44,7 +44,8 @@ export const register=async(req,res)=>{
             email,
             contact,
             fullname,
-            password
+            password,
+            role:isSeller?"seller":"buyer"
         })
 
      await sendTokenResponse(user,res,"User registered successfully")
