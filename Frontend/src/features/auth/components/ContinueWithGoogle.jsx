@@ -25,12 +25,3 @@ const ContinueWithGoogle = ({ isDark = false, href = '/api/auth/google' }) => {
 }
 
 export default ContinueWithGoogle
-// import React from 'react'
-
-// const ContinueWithGoogle = () => {
-//   return (
-//     <div>ContinueWithGoogle</div>
-//   )
-// }
-
-// export default ContinueWithGoogle
