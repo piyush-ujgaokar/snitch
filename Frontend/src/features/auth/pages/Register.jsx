@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import {useAuth} from '../hook/useAuth'
 import { Link, useNavigate } from 'react-router'
+import LogoToggle from '../components/LogoToggle'
+import ContinueWithGoogle from '../components/ContinueWithGoogle'
 
 const Register = () => {
 
@@ -8,6 +10,7 @@ const Register = () => {
     const {handleRegister}=useAuth()
 
   const [form, setForm] = useState({ fullName: '', email: '', contact: '', password: '', isSeller: false })
+  const [isDark, setIsDark] = useState(false)
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -30,11 +33,14 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-start justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className={`min-h-screen flex items-start justify-center py-12 px-4 sm:px-6 lg:px-8 ${isDark ? 'bg-[#121212] text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-extralight text-gray-900">Fab_Mens_Wear</h1>
-          <p className="mt-2 text-gray-500">Own Your Style.</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className={`text-5xl font-extralight ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>FAB_MENS_WEAR</h1>
+            <p className={`mt-2 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>OWN YOUR STYLE.</p>
+          </div>
+          <LogoToggle isDark={isDark} onToggle={() => setIsDark((s) => !s)} />
         </div>
 
         <form onSubmit={handleSubmit} className="bg-transparent space-y-5">
@@ -46,7 +52,7 @@ const Register = () => {
               onChange={handleChange}
               placeholder="Alexandros Vance"
               required
-              className="w-full rounded-2xl bg-gray-100 placeholder-gray-400 px-4 py-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition transform hover:scale-[1.002]"
+              className={`w-full rounded-2xl px-4 py-4 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BB86FC] transition transform hover:scale-[1.002] ${isDark ? 'bg-[#1f1f1f] text-gray-200' : 'bg-gray-100 text-gray-700'}`}
             />
           </div>
 
@@ -59,7 +65,7 @@ const Register = () => {
               onChange={handleChange}
               placeholder="vance@curator.io"
               required
-              className="w-full rounded-2xl bg-gray-100 placeholder-gray-400 px-4 py-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition transform hover:scale-[1.002]"
+              className={`w-full rounded-2xl px-4 py-4 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BB86FC] transition transform hover:scale-[1.002] ${isDark ? 'bg-[#1f1f1f] text-gray-200' : 'bg-gray-100 text-gray-700'}`}
             />
           </div>
 
@@ -70,8 +76,8 @@ const Register = () => {
               value={form.contact}
               onChange={handleChange}
               placeholder="+1 (555) 000-0000"
-              required
-              className="w-full rounded-2xl bg-gray-100 placeholder-gray-400 px-4 py-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition transform hover:scale-[1.002]"
+            //   required
+              className={`w-full rounded-2xl px-4 py-4 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BB86FC] transition transform hover:scale-[1.002] ${isDark ? 'bg-[#1f1f1f] text-gray-200' : 'bg-gray-100 text-gray-700'}`}
             />
           </div>
 
@@ -84,7 +90,7 @@ const Register = () => {
               onChange={handleChange}
               placeholder="••••••••••••"
               required
-              className="w-full rounded-2xl bg-gray-100 placeholder-gray-400 px-4 py-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition transform hover:scale-[1.002]"
+              className={`w-full rounded-2xl px-4 py-4 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BB86FC] transition transform hover:scale-[1.002] ${isDark ? 'bg-[#1f1f1f] text-gray-200' : 'bg-gray-100 text-gray-700'}`}
             />
           </div>
 
@@ -101,25 +107,27 @@ const Register = () => {
             <span className="text-sm text-gray-700">Register as Seller</span>
           </div>
 
-          <a href="/api/auth/google"
-            className='border-2 border-black-500 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-violet-700 text-white'
-          >Continue with google</a>
-
           <div>
             <button
               type="submit"
-              className="w-full mt-6 py-4 rounded-full bg-gradient-to-r from-purple-600 to-violet-700 text-white font-semibold text-lg shadow-md hover:scale-[1.01] transform transition"
+              className={`w-full mt-6 py-4 rounded-full text-white font-semibold text-lg shadow-md hover:scale-[1.01] transform transition ${isDark ? 'bg-gradient-to-r from-[#BB86FC] to-[#3F51B5]' : 'bg-gradient-to-r from-purple-600 to-violet-700'}`}
             >
               Create Account
             </button>
+
+          </div>
+
+          <div>
+            <ContinueWithGoogle isDark={isDark} href={'/api/auth/google'} />
           </div>
 
           <div className="text-center mt-6 text-sm text-gray-500">
-            Already have an account? <Link to={'/login'} className="text-purple-600 font-medium">Log in</Link>
+            Already have an account? <Link to={'/login'} className={`font-medium ${isDark ? 'text-purple-300' : 'text-purple-600'}`}>Log in</Link>
           </div>
         </form>
       </div>
     </div>
+    
   )
 }
 
