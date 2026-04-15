@@ -101,6 +101,10 @@ const Register = () => {
             <span className="text-sm text-gray-700">Register as Seller</span>
           </div>
 
+          <a href="/api/auth/google"
+            className='border-2 border-black-500 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-violet-700 text-white'
+          >Continue with google</a>
+
           <div>
             <button
               type="submit"

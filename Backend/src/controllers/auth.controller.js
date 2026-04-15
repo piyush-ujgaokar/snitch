@@ -11,7 +11,6 @@ async function sendTokenResponse(user,res,message){
     res.status(200).json({
         message,
         success:true,
-        token,
         user:{  
             id:user._id,
             email:user.email,
@@ -77,4 +76,10 @@ export const login=async(req,res)=>{
         console.log("Error while logging in:",error)
         res.status(500).json({ message: "Server error" });
     }
+}
+
+export const googleCallback=async(req,res)=>{
+    console.log(req.user)
+
+    res.redirect("http://localhost:5173/")
 }
