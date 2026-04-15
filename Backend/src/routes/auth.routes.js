@@ -1,5 +1,5 @@
 import Router from 'express'
-import { validateLoginUser, validateRegisterUser } from '../validators/auth.middleware.js';
+import { validateLoginUser, validateRegisterUser } from '../validators/auth.validator.js';
 import {register,login, googleCallback} from '../controllers/auth.controller.js'
 import passport from 'passport';
 import {config} from '../config/config.js'

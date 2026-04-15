@@ -1,4 +1,4 @@
-import { urlencoded } from "express";
+
 import mongoose from "mongoose";
 
 
@@ -33,10 +33,6 @@ const productSchema=new mongoose.Schema({
             url:{
                 type:String,
                 required:true
-            },
-            alt:{
-                type:String,
-                required:false
             }
         }
     ],
