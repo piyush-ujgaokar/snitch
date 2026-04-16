@@ -3,7 +3,7 @@ import axios from "axios";
 
 
 const productApiInstance=axios.create({
-    origin:"/api/products",
+    baseURL:"/api/products",
     withCredentials:true
 })
 

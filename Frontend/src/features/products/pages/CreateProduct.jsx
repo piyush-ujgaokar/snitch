@@ -1,12 +1,16 @@
 import React, { useRef, useState } from 'react'
+import {useProduct} from '../hooks/useProduct'
+
 
 const CreateProduct=()=>{
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
-  const [currency, setCurrency] = useState('USD')
+  const [currency, setCurrency] = useState('INR')
   const [files, setFiles] = useState([])
   const fileInputRef = useRef(null)
+
+  const {handleCreateProduct}=useProduct()
 
   const onFilesAdded = (newFiles) => {
     const arr = Array.from(newFiles)
@@ -40,17 +44,19 @@ const CreateProduct=()=>{
   const submit = async (e) => {
     e.preventDefault()
     // Basic client-side payload; replace with your API call
-    const form = new FormData()
-    form.append('title', title)
-    form.append('description', description)
-    form.append('price', price)
-    form.append('currency', currency)
+    const formData = new FormData()
+    formData.append('title', title)
+    formData.append('description', description)
+    // backend validator expects `priceAmount` and `priceCurrency`
+    formData.append('priceAmount', Number(price))
+    formData.append('priceCurrency', currency)
     files.forEach((f, i) => {
-      if (f instanceof File) form.append('images', f)
+      if (f instanceof File) formData.append('images', f)
     })
+console.log(formData)
     try {
       // placeholder; update URL to your backend endpoint
-      await fetch('/api/products', { method: 'POST', body: form })
+      await handleCreateProduct(formData) // Implement this function to call your API
       alert('Product created (mock)')
     } catch (err) {
       console.error(err)
@@ -59,11 +65,11 @@ const CreateProduct=()=>{
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-12">
-      <h2 className="text-gray-600 text-lg font-medium">Create-Product</h2>
-      <p className="text-gray-400 mt-1 mb-8">List your premium item in the curator collection. Every detail matters.</p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
+      <h2 className="text-gray-600 text-lg font-medium">Create Product</h2>
+      <p className="text-gray-400 mt-1 mb-8">List your premium item in the FAB_MENS collection. Every detail matters.</p>
 
-      <div className="flex gap-12">
+      <div className="flex flex-col-reverse gap-6 md:flex-row md:gap-12">
         {/* Left column: form */}
         <form className="flex-1" onSubmit={submit}>
           <label className="block text-xs font-semibold text-gray-500 mb-2">PRODUCT TITLE</label>
@@ -84,7 +90,7 @@ const CreateProduct=()=>{
             className="w-full bg-gray-100 rounded-xl p-4 placeholder-gray-400 mb-6 resize-none"
           />
 
-          <div className="flex items-center gap-6 mb-8">
+          <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:gap-6">
             <div className="flex-1">
               <label className="block text-xs font-semibold text-gray-500 mb-2">PRICE</label>
               <input
@@ -92,14 +98,14 @@ const CreateProduct=()=>{
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
                 type="number"
-                step="0.01"
                 className="w-full bg-gray-100 rounded-xl p-4 placeholder-gray-400"
               />
             </div>
 
-            <div className="w-40">
+            <div className="w-full md:w-40">
               <label className="block text-xs font-semibold text-gray-500 mb-2">CURRENCY</label>
               <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full bg-gray-100 rounded-xl p-4">
+                <option>INR</option>
                 <option>USD</option>
                 <option>EUR</option>
                 <option>GBP</option>
@@ -111,13 +117,13 @@ const CreateProduct=()=>{
         </form>
 
         {/* Right column: images */}
-        <div className="w-1/3">
+        <div className="w-full md:w-1/3">
           <label className="block text-xs font-semibold text-gray-500 mb-4">PRODUCT VISUALS</label>
 
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
-            className="border-2 border-dashed border-gray-200 rounded-xl h-64 flex items-center justify-center bg-white mb-4 relative"
+            className="border-2 border-dashed border-gray-200 rounded-xl h-48 md:h-64 flex items-center justify-center bg-white mb-4 relative"
           >
             <div className="text-center">
               <div className="w-14 h-14 rounded-full bg-violet-100 mx-auto flex items-center justify-center mb-3">
