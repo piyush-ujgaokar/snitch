@@ -66,7 +66,7 @@ console.log(formData)
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
-      <h2 className="text-gray-600 text-lg font-medium">Create Product</h2>
+      <h2 className="text-gray-600 text-lg font-medium">List Your Product</h2>
       <p className="text-gray-400 mt-1 mb-8">List your premium item in the FAB_MENS collection. Every detail matters.</p>
 
       <div className="flex flex-col-reverse gap-6 md:flex-row md:gap-12">
@@ -113,7 +113,7 @@ console.log(formData)
             </div>
           </div>
 
-          <button className="bg-gradient-to-r from-violet-600 to-violet-500 text-white px-8 py-3 rounded-full shadow-lg hover:opacity-95">Create Product</button>
+          <button className="bg-gradient-to-r cursor-pointer from-violet-600 to-violet-500 text-white px-8 py-3 rounded-full shadow-lg hover:opacity-95">List Product</button>
         </form>
 
         {/* Right column: images */}
