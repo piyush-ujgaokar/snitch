@@ -1,8 +1,9 @@
 import Router from 'express'
 import { validateLoginUser, validateRegisterUser } from '../validators/auth.validator.js';
-import {register,login, googleCallback} from '../controllers/auth.controller.js'
+import {register,login, googleCallback, getMe} from '../controllers/auth.controller.js'
 import passport from 'passport';
 import {config} from '../config/config.js'
+import { authuser } from '../middlewares/auth.middleware.js';
 
 const router=Router()
 
@@ -18,6 +19,9 @@ router.get('/google/callback',
             failureRedirect:config.Node_env==='development' ? 'http://localhost:5173/login' : '/login'
         }
     ),googleCallback)
+
+
+router.get('/me',authuser,getMe)
 
 
 export default router

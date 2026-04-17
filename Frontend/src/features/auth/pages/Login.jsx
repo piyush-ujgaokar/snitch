@@ -16,14 +16,17 @@ const Login = () => {
   const handleSubmit = async(e) => {
     e.preventDefault()
     
-    await handleLogin({
+    const user=await handleLogin({
         email:form.email,
         password:form.password
     })
 
-    navigate('/')
-
+if(user.role=='buyer'){
+  navigate('/')
+}else if(user.role=='seller'){
+  navigate('/seller/dashboard')
   }
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

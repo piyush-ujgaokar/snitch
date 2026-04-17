@@ -99,3 +99,13 @@ export const googleCallback=async(req,res)=>{
 
     res.redirect("http://localhost:5173/")
 }
+
+export const getMe=async(req,res)=>{
+    const user=req.user
+    // console.log("User data in controller:",user)
+    res.status(200).json({
+        message:"User fetched successfully",
+        success:true,
+        user
+    })
+}

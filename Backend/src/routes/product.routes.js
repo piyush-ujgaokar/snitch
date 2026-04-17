@@ -17,4 +17,6 @@ const router=express.Router()
 router.post('/',authenticateSeller,upload.array('images',7),createProductValidator,createProduct)
 router.get('/seller',authenticateSeller,getSellerProducts)
 
+
+
 export default router
