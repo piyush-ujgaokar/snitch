@@ -50,7 +50,7 @@ const CreateProduct=()=>{
     // backend validator expects `priceAmount` and `priceCurrency`
     formData.append('priceAmount', Number(price))
     formData.append('priceCurrency', currency)
-    files.forEach((f, i) => {
+    files.forEach((f) => {
       if (f instanceof File) formData.append('images', f)
     })
 console.log(formData)
