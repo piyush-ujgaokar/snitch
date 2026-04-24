@@ -83,7 +83,7 @@ const Home = () => {
 
         <section className="mt-8">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold">The Signature Edit</h3>
+            <h3 className="text-xl font-bold">The Fab Collection's</h3>
             <div className="text-sm text-gray-500">Showing {filtered.length} items</div>
           </div>
 
