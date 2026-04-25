@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router'
 import { useProduct } from '../hooks/useProduct'
 
@@ -9,6 +9,8 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const [selectedAttributes, setSelectedAttributes] = useState({})
 
   async function fetchedProductDetail() {
     setLoading(true)
@@ -26,16 +28,62 @@ const ProductDetails = () => {
     fetchedProductDetail()
   }, [productId])
 
-  const nextImage = () => {
-    if (!product?.images) return
-    setCurrentImageIndex((prev) => (prev + 1) % product.images.length)
+  // --- Safe Variant Options Logic ---
+  const variants = product ? (product?.varients || product?.variants || []) : []
+  const attributeOptionsRaw = {}
+
+  variants.forEach(variant => {
+    const attrs = variant.attributes || variant.attribute || {}
+    Object.entries(attrs).forEach(([key, value]) => {
+      const displayKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()
+      if (!attributeOptionsRaw[displayKey]) attributeOptionsRaw[displayKey] = new Set()
+      attributeOptionsRaw[displayKey].add(value)
+    })
+  })
+
+  // Convert sets to arrays for rendering
+  const attributeOptions = {}
+  Object.keys(attributeOptionsRaw).forEach(k => {
+    attributeOptions[k] = Array.from(attributeOptionsRaw[k])
+  })
+
+  // Pre-select first variant's attributes initially
+  useEffect(() => {
+    if (variants.length > 0) {
+      const firstAttrs = variants[0].attributes || variants[0].attribute || {}
+      const initials = {}
+      Object.entries(firstAttrs).forEach(([k, v]) => {
+        const displayKey = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase()
+        initials[displayKey] = v
+      })
+      setSelectedAttributes(initials)
+    }
+  }, [product, variants.length])
+
+  const handleAttributeSelect = (key, value) => {
+    setSelectedAttributes(prev => ({
+      ...prev,
+      [key]: value
+    }))
   }
 
-  const prevImage = () => {
-    if (!product?.images) return
-    setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length)
-  }
+  // Find currently matched variant dynamically based on State
+  const currentVariant = useMemo(() => {
+    return variants.find(variant => {
+      const attrs = variant.attributes || variant.attribute || {}
+      return Object.entries(selectedAttributes).every(([sKey, sVal]) => {
+        const variantKey = Object.keys(attrs).find(k => k.toLowerCase() === sKey.toLowerCase())
+        return variantKey && attrs[variantKey] === sVal
+      })
+    })
+  }, [variants, selectedAttributes])
 
+  // If selecting a variant changes images, reset carousel
+  useEffect(() => {
+    setCurrentImageIndex(0)
+  }, [currentVariant])
+
+  // --- Strict Early Returns to Prevent Null Errors ---
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-white flex items-center justify-center">
@@ -59,8 +107,23 @@ const ProductDetails = () => {
     )
   }
 
-  const images = product.images || []
-  const hasImages = images.length > 0
+  // --- Dynamic Display Data Fallback Logic ---
+  const displayImages = (currentVariant?.images && currentVariant?.images.length > 0) ? currentVariant?.images : (product.images || [])
+  const hasImages = displayImages.length > 0
+
+  const displayPriceAmount = currentVariant?.price?.amount || product.price?.amount || 0
+  const displayPriceCurrency = currentVariant?.price?.currency || product.price?.currency || 'INR'
+
+  // Image Navigation bound to displayImages
+  const nextImage = () => {
+    if (!hasImages) return
+    setCurrentImageIndex((prev) => (prev + 1) % displayImages.length)
+  }
+
+  const prevImage = () => {
+    if (!hasImages) return
+    setCurrentImageIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length)
+  }
 
   return (
     <div className="h-screen w-full bg-white text-black overflow-hidden flex flex-col" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -78,7 +141,7 @@ const ProductDetails = () => {
               </h1>
             </Link>
           </div>
-          <div className="flex items-center  gap-6">
+          <div className="flex items-center gap-6">
             <button className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors relative group" aria-label="Cart">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             </button>
@@ -94,33 +157,33 @@ const ProductDetails = () => {
             <>
               <div className="w-full h-full p-8 lg:p-20 flex items-center justify-center pb-12 lg:pb-24">
                 <img
-                  src={images[currentImageIndex]?.url || '/placeholder.png'}
+                  src={displayImages[currentImageIndex]?.url || '/placeholder.png'}
                   alt={`${product.title} - view ${currentImageIndex + 1}`}
                   className="max-w-full max-h-full object-contain transition-transform duration-[1s] ease-out"
                 />
               </div>
 
               {/* Navigation Arrows */}
-              {images.length > 1 && (
+              {displayImages.length > 1 && (
                 <>
                   <button
                     onClick={prevImage}
                     className="absolute cursor-pointer left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 border border-transparent hover:border-black hover:bg-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                   >
-                    <svg className="w-5 h-5  text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M15 19l-7-7 7-7" /></svg>
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M15 19l-7-7 7-7" /></svg>
                   </button>
                   <button
                     onClick={nextImage}
                     className="absolute cursor-pointer right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 border border-transparent hover:border-black hover:bg-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                   >
-                    <svg className="w-5 h-5  text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M9 5l7 7-7 7" /></svg>
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </>
               )}
 
               {/* Image Indicators */}
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-                {images.map((_, idx) => (
+                {displayImages.map((_, idx) => (
                   <div
                     key={idx}
                     className={`h-1 transition-all duration-300 ${idx === currentImageIndex ? 'w-8 bg-black' : 'w-4 bg-black/30'}`}
@@ -144,36 +207,76 @@ const ProductDetails = () => {
             </h2>
 
             <p className="text-xl sm:text-2xl font-bold tracking-widest text-[#1b1b1b]">
-              {product.price?.currency || 'INR'} {product.price?.amount?.toLocaleString('en-IN') || '0'}
+              {displayPriceCurrency} {displayPriceAmount.toLocaleString('en-IN')}
             </p>
 
             <div className="w-full h-[1px] bg-[#e8e8e8] my-8"></div>
 
-            <p className="text-sm text-[#474747] leading-relaxed tracking-wide mb-12">
+            <p className="text-sm text-[#474747] leading-relaxed tracking-wide mb-8">
               {product.description}
             </p>
 
+            {/* Variant Attributes Selectors */}
+            {Object.keys(attributeOptions).length > 0 && (
+                <div className="space-y-6 mb-12">
+                    {Object.entries(attributeOptions).map(([attrName, optionsArray]) => (
+                        <div key={attrName} className="flex flex-col">
+                            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#777777] mb-3 block">
+                                {attrName}
+                            </span>
+                            <div className="flex flex-wrap gap-3">
+                                {optionsArray.map(opt => {
+                                    const isSelected = selectedAttributes[attrName] === opt;
+                                    return (
+                                        <button 
+                                            key={opt}
+                                            onClick={() => handleAttributeSelect(attrName, opt)}
+                                            className={`cursor-pointer px-4 py-2 border text-xs tracking-wider transition-colors duration-300 ${isSelected ? 'border-black bg-black text-white' : 'border-[#e8e8e8] bg-transparent text-black hover:border-black'}`}
+                                        >
+                                            {opt}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Variant Not Available Warning */}
+            {variants.length > 0 && !currentVariant && (
+                <div className="mb-4">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-red-500">
+                        Selected Combination Not Available - Defaulting to Main Product
+                    </span>
+                </div>
+            )}
+
+            {/* Stock Level Indicator  */}
+            <div className="mb-8">
+                <span className="text-xs font-bold tracking-widest uppercase text-[#777777]">
+                    {variants.length > 0 && currentVariant
+                        ? (currentVariant.stock > 0 ? `Availability: ${currentVariant.stock} Units` : 'Out of Stock')
+                        : (product.stock > 0 ? `Availability: ${product.stock} Units` : 'In Stock')
+                    }
+                </span>
+            </div>
+
             {/* Action Buttons */}
-            <div className="flex flex-col gap-4 mt-12 pb-8">
-              <button className="cursor-pointer w-full py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300">
-                Buy Now
+            <div className="flex flex-col gap-4 mt-8 pb-8">
+              <button 
+                className="cursor-pointer w-full py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={(variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)}
+              >
+                {((variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)) ? 'Out of Stock' : 'Buy Now'}
               </button>
-              <button className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300">
+              <button 
+                className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={(variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)}
+              >
                 Add To Cart
               </button>
             </div>
-
-            {/* Supplementary Information Accordions (Static Mock)
-            <div className="border-t border-[#e8e8e8] pb-12">
-              <div className="py-6 border-b border-[#e8e8e8] flex justify-between items-center cursor-pointer group">
-                <span className="text-xs font-bold tracking-widest uppercase text-[#1b1b1b] group-hover:text-[#777777] transition-colors">Details & Care</span>
-                <svg className="w-4 h-4 text-black group-hover:text-[#777777] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M12 4v16m8-8H4" /></svg>
-              </div>
-              <div className="py-6 border-b border-[#e8e8e8] flex justify-between items-center cursor-pointer group">
-                <span className="text-xs font-bold tracking-widest uppercase text-[#1b1b1b] group-hover:text-[#777777] transition-colors">Delivery & Returns</span>
-                <svg className="w-4 h-4 text-black group-hover:text-[#777777] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M12 4v16m8-8H4" /></svg>
-              </div>
-            </div> */}
 
           </div>
         </div>
@@ -184,3 +287,6 @@ const ProductDetails = () => {
 }
 
 export default ProductDetails
+
+
+
