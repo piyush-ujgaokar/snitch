@@ -215,6 +215,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useProduct } from '../hooks/useProduct'
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router'
 
 const Dashboard = () => {
   const {handleGetSellerProduct}=useProduct()
@@ -222,6 +223,8 @@ const Dashboard = () => {
 
   const [search, setSearch] = useState('')
   const [imageIndex, setImageIndex] = useState({})
+
+  const navigate=useNavigate()
 
   useEffect(()=>{
     handleGetSellerProduct()
@@ -345,7 +348,9 @@ const Dashboard = () => {
               const active = imgs[idx]
               
               return (
-                <article key={product._id} className="group cursor-pointer">
+                <article 
+                onClick={()=>{navigate(`/seller/product/${product._id}`)}}
+                key={product._id} className="group cursor-pointer">
                   {/* Image Container */}
                   <div className="w-full aspect-[3/4] bg-[#eeeeee] relative overflow-hidden mb-4">
                     <img 

@@ -5,6 +5,7 @@ import CreateProduct from "../features/products/pages/CreateProduct";
 import Dashboard from "../features/products/pages/Dashboard";
 import Protected from "../features/auth/components/Protected";
 import Home from "../features/products/pages/Home";
+import SellerProductDetail from "../features/products/pages/SellerProductDetails";
 import ProductDetails from "../features/products/pages/ProductDetails";
 
 
@@ -38,6 +39,12 @@ export const routes = createBrowserRouter([
                 path:"/seller/dashboard",
                 element:<Protected role='seller'>
                         <Dashboard/>
+                    </Protected>
+            },
+            {
+                path:"/seller/product/:productId",
+                element:<Protected role='seller'>
+                        <SellerProductDetail/>
                     </Protected>
             }
         ]

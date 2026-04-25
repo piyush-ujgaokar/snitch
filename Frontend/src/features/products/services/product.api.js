@@ -27,3 +27,22 @@ export async function getProductDetail(productId){
     const response=await productApiInstance.get(`/detail/${productId}`)
     return response.data
 }
+
+export async function addProductVarient(productId,newProductVarient){
+
+    console.log(newProductVarient)
+
+    const formData=new FormData()
+
+    newProductVarient.images.forEach((image)=>{
+        formData.append('images',image.file)
+    })
+
+    formData.append('stock',newProductVarient.stock)
+    formData.append('priceAmount',newProductVarient.price.amount)
+    formData.append('attributes',JSON.stringify(newProductVarient.attributes))
+
+    const response=await productApiInstance.post(`/${productId}/varients`,formData)
+
+    return response.data
+}

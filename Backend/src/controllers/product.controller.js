@@ -79,3 +79,59 @@ export const getProductDetails=async (req,res)=>{
 
 }
 
+export const addProductVarient=async(req,res)=>{
+
+    const productId=req.params.productId
+
+    const product=await productModel.findOne({
+        _id:productId,
+        seller:req.user._id
+    })
+
+    if(!product){
+        return res.status(404).json({
+            message:"Product not Found",
+            success:false
+        })
+    }
+
+    console.log(product.varients)
+
+    const files=req.files
+    const images=[]
+    if(files || files.length !=0){
+     (  await Promise.all(files.map(async(file)=>{
+            const image=await uploadImage({
+                buffer:file.buffer,
+                fileName:file.originalname
+            })
+            return image
+        }))).map((image)=>{
+            images.push(image)
+        })
+    }
+
+    const price=req.body.priceAmount
+    const stock=req.body.stock
+    const attributes=JSON.parse(req.body.attributes || "{}")
+
+   product.varients.push({
+    images,
+    price:{
+         amount:price || product.price.amount,
+         currency:req.body.priceCurrency || product.price.currency
+   },
+   stock,
+   attributes
+})
+
+    await product.save()
+
+    return res.status(200).json({
+        message:"Product Varient added successfully",
+        success:true,
+        product
+    })
+
+}
+
