@@ -1,11 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router'
 import { useProduct } from '../hooks/useProduct'
+import { useCart } from '../../cart/hooks/useCart'
+import { current } from '@reduxjs/toolkit'
+
+
 
 const ProductDetails = () => {
 
   const { productId } = useParams()
   const { handleGetProductDetails } = useProduct()
+  const { handleAddItem } = useCart()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -31,6 +36,7 @@ const ProductDetails = () => {
   // --- Safe Variant Options Logic ---
   const variants = product ? (product?.varients || product?.variants || []) : []
   const attributeOptionsRaw = {}
+
 
   variants.forEach(variant => {
     const attrs = variant.attributes || variant.attribute || {}
@@ -77,6 +83,8 @@ const ProductDetails = () => {
       })
     })
   }, [variants, selectedAttributes])
+
+  console.log({product,currentVariant})
 
   // If selecting a variant changes images, reset carousel
   useEffect(() => {
@@ -273,6 +281,12 @@ const ProductDetails = () => {
               <button 
                 className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={(variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)}
+                onClick={()=>{
+                    handleAddItem({
+                        productId:product._id,
+                        varientId:currentVariant._id
+                    })
+                }}
               >
                 Add To Cart
               </button>

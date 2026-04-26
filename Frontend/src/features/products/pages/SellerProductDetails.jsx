@@ -101,14 +101,26 @@ const SellerProductDetail = () => {
             }
         }
 
-        await handleAddProductVarient(productId,newVariant)
+        // send to server
+        try {
+            const saved = await handleAddProductVarient(productId, newVariant)
 
-        console.log(newVariant)
+            // if server returned updated product, update UI from server state
+            if (saved) {
+                setProduct(saved)
+                // clear any local-only variants since server copy is now authoritative
+                setLocalVariants([])
+            } else {
+                // fallback: keep local variant so user sees immediate feedback
+                setLocalVariants([newVariant, ...localVariants])
+            }
 
-        // Push to local store
-        setLocalVariants([newVariant, ...localVariants])
-
-        console.log("Synthesized Variant locally:", newVariant)
+            console.log("Saved variant result:", saved)
+        } catch (err) {
+            console.error('Failed to save variant', err)
+            // still show locally so user doesn't lose work
+            setLocalVariants([newVariant, ...localVariants])
+        }
 
         // Reset form
         setPrice('')
@@ -141,8 +153,9 @@ const SellerProductDetail = () => {
         )
     }
 
-    // Combine remote variants and locally created variants
-    const displayVariants = [...localVariants, ...(product.variants || [])]
+    // Combine remote variants (backend uses `varients`) and locally created variants
+    const remoteVariants = product.varients || product.variants || []
+    const displayVariants = [...localVariants, ...remoteVariants]
 
     return (
         <div className="min-h-screen w-full bg-[#f9f9f9] text-black overflow-x-hidden flex flex-col pt-8" style={{ fontFamily: 'Manrope, sans-serif' }}>
