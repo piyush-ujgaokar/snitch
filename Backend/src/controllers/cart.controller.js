@@ -18,10 +18,16 @@ export const addToCart=async (req,res)=>{
         })
     }
 
-    // If product has variants, ensure provided variant exists
-    if(Array.isArray(product.varients) && product.varients.length > 0){
-        const variantExists = product.varients.some(v => v._id.toString() === String(varientId))
-        if(!variantExists){
+    // Determine if a real variant was provided. If variantId equals productId
+    // or no variantId maps to a variant, treat as "no variant selected" and
+    // add the main product (use product.price and a fallback stock).
+    const hasVariants = Array.isArray(product.varients) && product.varients.length > 0
+    let matchedVariant = null
+
+    if (hasVariants) {
+        matchedVariant = product.varients.find(v => v._id.toString() === String(varientId)) || null
+        // If a variantId was provided and it's not the productId and not found, return 404
+        if (!matchedVariant && String(varientId) !== String(productId)) {
             return res.status(404).json({
                 message: "Product variant not found",
                 success: false
@@ -29,17 +35,18 @@ export const addToCart=async (req,res)=>{
         }
     }
 
-    const stock = await stockOfVarient(productId, varientId)
+    // Resolve stock: if matchedVariant use its stock, otherwise fallback to large number
+    const stock = matchedVariant ? (matchedVariant.stock || 0) : Number.MAX_SAFE_INTEGER
 
     const cart=(await cartModel.findOne({user:req.user._id})) || 
     await cartModel.create({user:req.user._id})
 
 
 
-    const isProductAlreadyInCart = cart.items.some(item => item.product.toString() === productId && item.varient.toString() === String(varientId))
+    const isProductAlreadyInCart = cart.items.some(item => item.product.toString() === productId && String(item.varient) === String(matchedVariant ? matchedVariant._id : null) && String(varientId) === String(matchedVariant ? matchedVariant._id : productId))
 
     if(isProductAlreadyInCart){
-        const existing = cart.items.find(item => item.product.toString() === productId && item.varient.toString() === String(varientId))
+        const existing = cart.items.find(item => item.product.toString() === productId && String(item.varient) === String(matchedVariant ? matchedVariant._id : null) && String(varientId) === String(matchedVariant ? matchedVariant._id : productId))
         const quantityInCart = existing.quantity
         if(quantityInCart + qty > stock){
             return res.status(400).json({
@@ -69,9 +76,9 @@ export const addToCart=async (req,res)=>{
 
     cart.items.push({
         product: productId,
-        varient: varientId,
+        varient: matchedVariant ? matchedVariant._id : null,
         quantity: qty,
-        price: product.price,
+        price: matchedVariant ? matchedVariant.price || product.price : product.price,
     })
 
     await cart.save()
@@ -106,6 +113,16 @@ export const getCart=async(req,res)=>{
 export const incrementCartItemQuantity=async(req,res)=>{
         const {productId,varientId}=req.params
 
+        // Normalize varientId: treat 'null', 'undefined', or productId as no-variant (null)
+        const normalizeVarient = (vid, pid) => {
+            if(!vid) return null
+            if(String(vid) === String(pid)) return null
+            if(String(vid).toLowerCase() === 'null' || String(vid).toLowerCase() === 'undefined') return null
+            return vid
+        }
+
+        const normVarId = normalizeVarient(varientId, productId)
+
         const product = await productModel.findById(productId)
 
         if(!product){
@@ -115,9 +132,9 @@ export const incrementCartItemQuantity=async(req,res)=>{
             })
         }
 
-        // If product has variants, ensure variant exists
-        if(Array.isArray(product.varients) && product.varients.length > 0){
-            const variantExists = product.varients.some(v => v._id.toString() === String(varientId))
+        // If product has variants, ensure provided variant exists (unless normVarId is null)
+        if(Array.isArray(product.varients) && product.varients.length > 0 && normVarId){
+            const variantExists = product.varients.some(v => v._id.toString() === String(normVarId))
             if(!variantExists){
                 return res.status(404).json({
                     message: "Product variant not found",
@@ -135,11 +152,18 @@ export const incrementCartItemQuantity=async(req,res)=>{
             })
         }
 
-        const stock= await stockOfVarient(productId,varientId)
+        // Resolve stock: only call stockOfVarient when there's a real variant
+        const stock = normVarId ? await stockOfVarient(productId, normVarId) : Number.MAX_SAFE_INTEGER
 
-        const itemQuantityInCart=cart.items.find(item=>item.product.toString()===productId && item.varient.toString()===varientId)?.quantity || 0
+        const itemInCart = cart.items.find(item => {
+            const itemVar = item.varient ? item.varient.toString() : null
+            const compareVar = normVarId ? String(normVarId) : null
+            return item.product.toString() === productId && itemVar === compareVar
+        })
 
-        if(itemQuantityInCart+1>stock){
+        const itemQuantityInCart = itemInCart?.quantity || 0
+
+        if(itemQuantityInCart + 1 > stock){
             return res.status(400).json({
                 message:`Only ${stock} items left in stock. And you already have ${itemQuantityInCart} items in your cart`,
                 success:false
@@ -147,9 +171,9 @@ export const incrementCartItemQuantity=async(req,res)=>{
         }
 
         await cartModel.findOneAndUpdate(
-            {user:req.user._id,"items.product":productId,"items.varient":varientId},
-            { $inc: {"items.$.quantity": 1}},
-            {new:true}
+            { user: req.user._id, "items.product": productId, "items.varient": normVarId || null },
+            { $inc: { "items.$.quantity": 1 } },
+            { new: true }
         )
 
         return res.status(200).json({
@@ -164,7 +188,17 @@ export const incrementCartItemQuantity=async(req,res)=>{
 export const decrementCartItemQuantity=async(req,res)=>{
     const {productId,varientId}=req.params
 
-    const cart=await cartModel.findOne({user:req.user._id})
+    // Normalize variant id like in other handlers
+    const normalizeVarient = (vid, pid) => {
+        if(!vid) return null
+        if(String(vid) === String(pid)) return null
+        if(String(vid).toLowerCase() === 'null' || String(vid).toLowerCase() === 'undefined') return null
+        return vid
+    }
+
+    const normVarId = normalizeVarient(varientId, productId)
+
+    const cart = await cartModel.findOne({ user: req.user._id })
 
     if(!cart){
         return res.status(404).json({
@@ -173,7 +207,11 @@ export const decrementCartItemQuantity=async(req,res)=>{
         })
     }
 
-    const itemInCart=cart.items.find(item=>item.product.toString()===productId && item.varient.toString()===varientId)
+    const itemInCart = cart.items.find(item => {
+        const itemVar = item.varient ? item.varient.toString() : null
+        const compareVar = normVarId ? String(normVarId) : null
+        return item.product.toString() === productId && itemVar === compareVar
+    })
 
     if(!itemInCart){
         return res.status(404).json({
@@ -183,12 +221,16 @@ export const decrementCartItemQuantity=async(req,res)=>{
     }
 
     if(itemInCart.quantity===1){
-        cart.items=cart.items.filter(item=>!(item.product.toString()===productId && item.varient.toString()===varientId))
+        cart.items = cart.items.filter(item => {
+            const itemVar = item.varient ? item.varient.toString() : null
+            const compareVar = normVarId ? String(normVarId) : null
+            return !(item.product.toString() === productId && itemVar === compareVar)
+        })
     }
 
-    const stock=await stockOfVarient(productId,varientId)
+    const stock = normVarId ? await stockOfVarient(productId, normVarId) : Number.MAX_SAFE_INTEGER
 
-    if(itemInCart.quantity-1>stock){
+    if(itemInCart.quantity-1 > stock){
         return res.status(400).json({
             message:`Only ${stock} items left in stock. And you already have ${itemInCart.quantity} items in your cart`,
             success:false
@@ -196,9 +238,9 @@ export const decrementCartItemQuantity=async(req,res)=>{
     }
 
     await cartModel.findOneAndUpdate(
-        {user:req.user._id,"items.product":productId,"items.varient":varientId},
-        { $inc: {"items.$.quantity": -1}},
-        {new:true}
+        { user: req.user._id, "items.product": productId, "items.varient": normVarId || null },
+        { $inc: { "items.$.quantity": -1 } },
+        { new: true }
     )
 
     return res.status(200).json({
@@ -209,6 +251,14 @@ export const decrementCartItemQuantity=async(req,res)=>{
 
 export const removeCartItem=async(req,res)=>{
     const {productId,varientId}=req.params
+    const normalizeVarient = (vid, pid) => {
+        if(!vid) return null
+        if(String(vid) === String(pid)) return null
+        if(String(vid).toLowerCase() === 'null' || String(vid).toLowerCase() === 'undefined') return null
+        return vid
+    }
+
+    const normVarId = normalizeVarient(varientId, productId)
 
     const cart=await cartModel.findOne({user:req.user._id})
 
@@ -219,7 +269,11 @@ export const removeCartItem=async(req,res)=>{
         })
     }
 
-    const itemInCart=cart.items.find(item=>item.product.toString()===productId && item.varient.toString()===varientId)
+    const itemInCart = cart.items.find(item => {
+        const itemVar = item.varient ? item.varient.toString() : null
+        const compareVar = normVarId ? String(normVarId) : null
+        return item.product.toString() === productId && itemVar === compareVar
+    })
 
     if(!itemInCart){
         return res.status(404).json({
@@ -228,7 +282,11 @@ export const removeCartItem=async(req,res)=>{
         })
     }
 
-    cart.items=cart.items.filter(item=>!(item.product.toString()===productId && item.varient.toString()===varientId))
+    cart.items = cart.items.filter(item => {
+        const itemVar = item.varient ? item.varient.toString() : null
+        const compareVar = normVarId ? String(normVarId) : null
+        return !(item.product.toString() === productId && itemVar === compareVar)
+    })
 
     await cart.save()
     

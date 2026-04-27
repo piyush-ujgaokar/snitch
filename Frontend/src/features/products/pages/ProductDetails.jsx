@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
+import { useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router'
 import { useProduct } from '../hooks/useProduct'
 import { useCart } from '../../cart/hooks/useCart'
@@ -51,28 +52,39 @@ const navigate=useNavigate()
     attributeOptions[k] = Array.from(attributeOptionsRaw[k])
   })
 
-  // Pre-select first variant's attributes initially
-  useEffect(() => {
-    if (variants.length > 0) {
-      const firstAttrs = variants[0].attributes || variants[0].attribute || {}
-      const initials = {}
-      Object.entries(firstAttrs).forEach(([k, v]) => {
-        const displayKey = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase()
-        initials[displayKey] = v
-      })
-      setSelectedAttributes(initials)
+  const attributesRef = useRef(null)
+
+  const scrollToAttributes = () => {
+    if(attributesRef.current){
+      attributesRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [product, variants.length])
+  }
+
+  // Pre-select first variant's attributes initially
+  // Do not auto-select a variant — show main product by default.
+  // If you want to auto-select variant in future, add logic here.
 
   const handleAttributeSelect = (key, value) => {
-    setSelectedAttributes(prev => ({
-      ...prev,
-      [key]: value
-    }))
+    setSelectedAttributes(prev => {
+      // If user clicks the same value again, remove that attribute (toggle off)
+      if (prev[key] === value) {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      }
+      return {
+        ...prev,
+        [key]: value
+      }
+    })
   }
 
   // Find currently matched variant dynamically based on State
   const currentVariant = useMemo(() => {
+    // If user hasn't selected any attributes, do not auto-match any variant.
+    if (!variants || variants.length === 0) return undefined
+    if (Object.keys(selectedAttributes).length === 0) return undefined
+
     return variants.find(variant => {
       const attrs = variant.attributes || variant.attribute || {}
       return Object.entries(selectedAttributes).every(([sKey, sVal]) => {
@@ -226,7 +238,7 @@ const navigate=useNavigate()
 
             {/* Variant Attributes Selectors */}
             {Object.keys(attributeOptions).length > 0 && (
-              <div className="space-y-6 mb-12">
+              <div ref={attributesRef} className="space-y-6 mb-12">
                 {Object.entries(attributeOptions).map(([attrName, optionsArray]) => (
                   <div key={attrName} className="flex flex-col">
                     <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#777777] mb-3 block">
@@ -252,7 +264,7 @@ const navigate=useNavigate()
             )}
 
             {/* Variant Not Available Warning */}
-            {variants.length > 0 && !currentVariant && (
+            {variants.length > 0 && Object.keys(selectedAttributes).length > 0 && !currentVariant && (
               <div className="mb-4">
                 <span className="text-[10px] font-bold tracking-widest uppercase text-red-500">
                   Selected Combination Not Available - Defaulting to Main Product
@@ -272,24 +284,34 @@ const navigate=useNavigate()
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 mt-8 pb-8">
-              <button 
-                className="cursor-pointer w-full py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={(variants.length > 0 && (!currentVariant || currentVariant.stock === 0)) || (variants.length === 0 && product.stock === 0)}
-              >
-                {((variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)) ? 'Out of Stock' : (variants.length > 0 && !currentVariant ? 'Select Options' : 'Buy Now')}
-              </button>
-              <button 
-                className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={(variants.length > 0 && (!currentVariant || currentVariant.stock === 0)) || (variants.length === 0 && product.stock === 0)}
-                onClick={()=>{
+                {/* Buy Now: always visible; disabled only when truly out of stock */}
+                <button
+                  className="cursor-pointer w-full py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    const isOutOfStock = variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)
+                    if (isOutOfStock) return
+                    // TODO: implement buy flow (navigate to checkout with item)
+                  }}
+                  disabled={variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)}
+                >
+                  {(variants.length > 0 ? (currentVariant ? (currentVariant.stock === 0 ? 'Out of Stock' : 'Buy Now') : 'Buy Now') : (product.stock === 0 ? 'Out of Stock' : 'Buy Now'))}
+                </button>
+
+                {/* Add To Cart: always visible; adds main product when no variant selected */}
+                <button
+                  className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    const isOutOfStock = variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)
+                    if (isOutOfStock) return
                     handleAddItem({
-                        productId: product._id,
-                        varientId: currentVariant ? currentVariant._id : product._id
+                      productId: product._id,
+                      varientId: currentVariant ? currentVariant._id : product._id
                     })
-                }}
-              >
-                {variants.length > 0 && !currentVariant ? 'Select Options' : 'Add To Cart'}
-              </button>
+                  }}
+                  disabled={variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)}
+                >
+                  {(variants.length > 0 ? (currentVariant ? (currentVariant.stock === 0 ? 'Out of Stock' : 'Add To Cart') : 'Add To Cart') : (product.stock === 0 ? 'Out of Stock' : 'Add To Cart'))}
+                </button>
             </div>
 
           </div>
