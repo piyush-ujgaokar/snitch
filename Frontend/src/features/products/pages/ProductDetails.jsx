@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { useParams, Link } from 'react-router'
+import { useParams, Link, useNavigate } from 'react-router'
 import { useProduct } from '../hooks/useProduct'
 import { useCart } from '../../cart/hooks/useCart'
-import { current } from '@reduxjs/toolkit'
-
 
 
 const ProductDetails = () => {
@@ -14,7 +12,7 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-
+const navigate=useNavigate()
   const [selectedAttributes, setSelectedAttributes] = useState({})
 
   async function fetchedProductDetail() {
@@ -84,7 +82,7 @@ const ProductDetails = () => {
     })
   }, [variants, selectedAttributes])
 
-  console.log({product,currentVariant})
+  console.log({ product, currentVariant })
 
   // If selecting a variant changes images, reset carousel
   useEffect(() => {
@@ -150,7 +148,9 @@ const ProductDetails = () => {
             </Link>
           </div>
           <div className="flex items-center gap-6">
-            <button className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors relative group" aria-label="Cart">
+            <button onClick={()=>{
+                          navigate('/cart')
+                        }}  className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors relative group" aria-label="Cart">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             </button>
           </div>
@@ -226,69 +226,69 @@ const ProductDetails = () => {
 
             {/* Variant Attributes Selectors */}
             {Object.keys(attributeOptions).length > 0 && (
-                <div className="space-y-6 mb-12">
-                    {Object.entries(attributeOptions).map(([attrName, optionsArray]) => (
-                        <div key={attrName} className="flex flex-col">
-                            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#777777] mb-3 block">
-                                {attrName}
-                            </span>
-                            <div className="flex flex-wrap gap-3">
-                                {optionsArray.map(opt => {
-                                    const isSelected = selectedAttributes[attrName] === opt;
-                                    return (
-                                        <button 
-                                            key={opt}
-                                            onClick={() => handleAttributeSelect(attrName, opt)}
-                                            className={`cursor-pointer px-4 py-2 border text-xs tracking-wider transition-colors duration-300 ${isSelected ? 'border-black bg-black text-white' : 'border-[#e8e8e8] bg-transparent text-black hover:border-black'}`}
-                                        >
-                                            {opt}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+              <div className="space-y-6 mb-12">
+                {Object.entries(attributeOptions).map(([attrName, optionsArray]) => (
+                  <div key={attrName} className="flex flex-col">
+                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#777777] mb-3 block">
+                      {attrName}
+                    </span>
+                    <div className="flex flex-wrap gap-3">
+                      {optionsArray.map(opt => {
+                        const isSelected = selectedAttributes[attrName] === opt;
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => handleAttributeSelect(attrName, opt)}
+                            className={`cursor-pointer px-4 py-2 border text-xs tracking-wider transition-colors duration-300 ${isSelected ? 'border-black bg-black text-white' : 'border-[#e8e8e8] bg-transparent text-black hover:border-black'}`}
+                          >
+                            {opt}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
             {/* Variant Not Available Warning */}
             {variants.length > 0 && !currentVariant && (
-                <div className="mb-4">
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-red-500">
-                        Selected Combination Not Available - Defaulting to Main Product
-                    </span>
-                </div>
+              <div className="mb-4">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-red-500">
+                  Selected Combination Not Available - Defaulting to Main Product
+                </span>
+              </div>
             )}
 
             {/* Stock Level Indicator  */}
             <div className="mb-8">
-                <span className="text-xs font-bold tracking-widest uppercase text-[#777777]">
-                    {variants.length > 0 && currentVariant
-                        ? (currentVariant.stock > 0 ? `Availability: ${currentVariant.stock} Units` : 'Out of Stock')
-                        : (product.stock > 0 ? `Availability: ${product.stock} Units` : 'In Stock')
-                    }
-                </span>
+              <span className="text-xs font-bold tracking-widest uppercase text-[#777777]">
+                {variants.length > 0 && currentVariant
+                  ? (currentVariant.stock > 0 ? `Availability: ${currentVariant.stock} Units` : 'Out of Stock')
+                  : (product.stock > 0 ? `Availability: ${product.stock} Units` : 'In Stock')
+                }
+              </span>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 mt-8 pb-8">
               <button 
                 className="cursor-pointer w-full py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={(variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)}
+                disabled={(variants.length > 0 && (!currentVariant || currentVariant.stock === 0)) || (variants.length === 0 && product.stock === 0)}
               >
-                {((variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)) ? 'Out of Stock' : 'Buy Now'}
+                {((variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)) ? 'Out of Stock' : (variants.length > 0 && !currentVariant ? 'Select Options' : 'Buy Now')}
               </button>
               <button 
                 className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={(variants.length > 0 && currentVariant && currentVariant.stock === 0) || (variants.length === 0 && product.stock === 0)}
+                disabled={(variants.length > 0 && (!currentVariant || currentVariant.stock === 0)) || (variants.length === 0 && product.stock === 0)}
                 onClick={()=>{
                     handleAddItem({
-                        productId:product._id,
-                        varientId:currentVariant._id
+                        productId: product._id,
+                        varientId: currentVariant ? currentVariant._id : product._id
                     })
                 }}
               >
-                Add To Cart
+                {variants.length > 0 && !currentVariant ? 'Select Options' : 'Add To Cart'}
               </button>
             </div>
 

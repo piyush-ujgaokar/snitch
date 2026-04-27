@@ -7,6 +7,7 @@ import Protected from "../features/auth/components/Protected";
 import Home from "../features/products/pages/Home";
 import SellerProductDetail from "../features/products/pages/SellerProductDetails";
 import ProductDetails from "../features/products/pages/ProductDetails";
+import Cart from "../features/cart/pages/Cart";
 
 
 export const routes = createBrowserRouter([
@@ -25,6 +26,10 @@ export const routes = createBrowserRouter([
     {
         path:'/product/:productId',
         element:<ProductDetails/>
+    },
+    {
+        path: "/cart",
+        element: <Cart />
     },
     {
         path:'/seller',
