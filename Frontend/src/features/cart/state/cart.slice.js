@@ -15,48 +15,87 @@ const cartSlice = createSlice({
             state.Items.push(action.payload)
         },
         incrementCartItem: (state, action) => {
-            const { productId, varientId } = action.payload
+            const { productId, varientId } = action.payload;
 
-            state.Items = state.Items.map(item => {
-                const pId = item.productId?._id || item.productId || item.product?._id || item.product;
-                const vId = item.varientId?._id || item.varientId || item.varient?._id || item.varient || item.variantId?._id || item.variantId || item.variant?._id || item.variant;
-                
-                if (pId === productId && vId === varientId) {
-                    return {
-                        ...item,
-                        quantity: item.quantity + 1
-                    }
-                } else {
-                    return item
-                }
-            })
+            const extractId = (val) => {
+                if (!val) return null;
+                if (typeof val === 'object') return val._id ? String(val._id) : String(val);
+                return String(val);
+            };
+            
+            const normalizeVId = (v, p) => {
+                const vid = extractId(v);
+                const pid = extractId(p);
+                if (!vid || vid === pid || vid === 'null' || vid === 'undefined') return null;
+                return vid;
+            };
+
+            const reqPId = extractId(productId);
+            const reqVId = normalizeVId(varientId, reqPId);
+
+            const item = state.Items.find(item => {
+                const itemPId = extractId(item.productId || item.product);
+                const itemVId = normalizeVId(item.varientId || item.varient || item.variantId || item.variant, itemPId);
+                return itemPId === reqPId && itemVId === reqVId;
+            });
+
+            if (item) {
+                item.quantity += 1;
+            }
         },
         decrementCartItem: (state, action) => {
-            const { productId, varientId } = action.payload
+            const { productId, varientId } = action.payload;
 
-            state.Items = state.Items.map(item => {
-                const pId = item.productId?._id || item.productId || item.product?._id || item.product;
-                const vId = item.varientId?._id || item.varientId || item.varient?._id || item.varient || item.variantId?._id || item.variantId || item.variant?._id || item.variant;
+            const extractId = (val) => {
+                if (!val) return null;
+                if (typeof val === 'object') return val._id ? String(val._id) : String(val);
+                return String(val);
+            };
+            
+            const normalizeVId = (v, p) => {
+                const vid = extractId(v);
+                const pid = extractId(p);
+                if (!vid || vid === pid || vid === 'null' || vid === 'undefined') return null;
+                return vid;
+            };
 
-                if (pId === productId && vId === varientId) {
-                    return {
-                        ...item,
-                        quantity: item.quantity - 1
-                    }
-                } else {
-                    return item
-                }
-            })
+            const reqPId = extractId(productId);
+            const reqVId = normalizeVId(varientId, reqPId);
+
+            const item = state.Items.find(item => {
+                const itemPId = extractId(item.productId || item.product);
+                const itemVId = normalizeVId(item.varientId || item.varient || item.variantId || item.variant, itemPId);
+                return itemPId === reqPId && itemVId === reqVId;
+            });
+
+            if (item) {
+                item.quantity -= 1;
+            }
         },
         removeCartItem: (state, action) => {
-            const { productId, varientId } = action.payload
+            const { productId, varientId } = action.payload;
+
+            const extractId = (val) => {
+                if (!val) return null;
+                if (typeof val === 'object') return val._id ? String(val._id) : String(val);
+                return String(val);
+            };
+            
+            const normalizeVId = (v, p) => {
+                const vid = extractId(v);
+                const pid = extractId(p);
+                if (!vid || vid === pid || vid === 'null' || vid === 'undefined') return null;
+                return vid;
+            };
+
+            const reqPId = extractId(productId);
+            const reqVId = normalizeVId(varientId, reqPId);
 
             state.Items = state.Items.filter(item => {
-                const pId = item.productId?._id || item.productId || item.product?._id || item.product;
-                const vId = item.varientId?._id || item.varientId || item.varient?._id || item.varient || item.variantId?._id || item.variantId || item.variant?._id || item.variant;
-                
-                return !(pId === productId && vId === varientId)
-            })
+                const itemPId = extractId(item.productId || item.product);
+                const itemVId = normalizeVId(item.varientId || item.varient || item.variantId || item.variant, itemPId);
+                return !(itemPId === reqPId && itemVId === reqVId);
+            });
         }
         
     }

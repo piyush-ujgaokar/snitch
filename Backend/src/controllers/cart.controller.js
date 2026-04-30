@@ -56,7 +56,7 @@ export const addToCart=async (req,res)=>{
         }
 
         await cartModel.findOneAndUpdate(
-            { user: req.user._id, "items.product": productId, "items.varient": varientId },
+            { user: req.user._id, items: { $elemMatch: { product: productId, varient: matchedVariant ? matchedVariant._id : null } } },
             { $inc: { "items.$.quantity": qty } },
             { new: true }
         )
@@ -171,7 +171,7 @@ export const incrementCartItemQuantity=async(req,res)=>{
         }
 
         await cartModel.findOneAndUpdate(
-            { user: req.user._id, "items.product": productId, "items.varient": normVarId || null },
+            { user: req.user._id, items: { $elemMatch: { product: productId, varient: normVarId || null } } },
             { $inc: { "items.$.quantity": 1 } },
             { new: true }
         )
@@ -238,7 +238,7 @@ export const decrementCartItemQuantity=async(req,res)=>{
     }
 
     await cartModel.findOneAndUpdate(
-        { user: req.user._id, "items.product": productId, "items.varient": normVarId || null },
+        { user: req.user._id, items: { $elemMatch: { product: productId, varient: normVarId || null } } },
         { $inc: { "items.$.quantity": -1 } },
         { new: true }
     )
