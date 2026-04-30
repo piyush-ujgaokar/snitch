@@ -62,19 +62,31 @@ const Cart = () => {
 
                     <div className="flex flex-col gap-12">
                         {cartItems.map((item, idx) => {
-                            // Defensive parsing
+                            // Defensive parsing and normalization
                             const pId = item.productId?._id || item.productId || item.product?._id || item.product;
                             const vId = item.varientId?._id || item.varientId || item.varient?._id || item.varient || item.variantId?._id || item.variantId || item.variant?._id || item.variant;
-                            
+
                             const product = typeof item.product === 'object' ? item.product : (typeof item.productId === 'object' ? item.productId : {});
-                            const variant = typeof item.varient === 'object' ? item.varient : (typeof item.varientId === 'object' ? item.varientId : (typeof item.variant === 'object' ? item.variant : {}));
-                            
+
+                            // product.varients is expected to be an array on the populated product
+                            const productVarients = Array.isArray(product?.varients) ? product.varients : []
+
+                            // Resolve the selected variant object (if any)
+                            let variant = null
+                            if (item.varient && typeof item.varient === 'object') variant = item.varient
+                            else if (item.varientId && typeof item.varientId === 'object') variant = item.varientId
+                            else if (vId && productVarients.length) {
+                                variant = productVarients.find(v => String(v._id) === String(vId)) || null
+                            }
+
                             const title = product?.title || 'Unknown Product';
-                            const priceAmount = variant?.price?.amount || product?.price?.amount || item.price || 0;
-                            const priceCurrency = variant?.price?.currency || product?.price?.currency || 'INR';
+                            const basePrice = product?.price?.amount ?? (item.price?.amount ?? null)
+                            const variantPrice = variant?.price?.amount ?? null
+                            const priceAmount = variantPrice ?? basePrice ?? (item.price || 0)
+                            const priceCurrency = variant?.price?.currency || product?.price?.currency || (item.price?.currency) || 'INR';
                             const images = variant?.images?.length ? variant.images : (product?.images || []);
                             const image = images[0]?.url || '/placeholder.png';
-                            
+
                             // Parse attributes
                             const attrs = variant?.attributes || variant?.attribute || {};
 
@@ -92,6 +104,22 @@ const Cart = () => {
                                                 {priceCurrency} {priceAmount.toLocaleString('en-IN')}
                                             </p>
                                         </div>
+                                        {
+                                            // If a variant exists and its price differs from the base product price,
+                                            // show the price difference (save/lose). Use basePrice as the product's price.
+                                            variantPrice != null && basePrice != null && variantPrice !== basePrice && (
+                                                variantPrice < basePrice ? (
+                                                    <p className="text-sm font-bold tracking-widest text-green-600 whitespace-nowrap ml-4">
+                                                        You Will Save {(basePrice - variantPrice).toLocaleString('en-IN')} On This Product
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-sm font-bold tracking-widest text-red-600 whitespace-nowrap ml-4">
+                                                        You Will Lose {(variantPrice - basePrice).toLocaleString('en-IN')} On This Product
+                                                    </p>
+                                                )
+                                            )
+                                        }
+                                       
 
                                         {Object.keys(attrs).length > 0 && (
                                             <div className="flex flex-wrap gap-4 mb-8">
