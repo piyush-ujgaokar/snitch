@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
 import { addItem, decrementCartItemApi, getCartItems, incrementCartItemApi, removeCartItemApi } from "../service/cart.api";
-import { addItem as addItemToCart, decrementCartItem, incrementCartItem, removeCartItem, setItems } from "../state/cart.slice";
+import { decrementCartItem, incrementCartItem, removeCartItem, setCart } from "../state/cart.slice";
 
 export const useCart = () => {
     const dispatch = useDispatch();
@@ -13,23 +13,23 @@ export const useCart = () => {
     async function handleGetCart() {
         const data = await getCartItems()
         console.log("Fetched Cart:", data)
-        const extractedItems = Array.isArray(data?.cart) ? data.cart : (Array.isArray(data?.cart?.items) ? data.cart.items : (Array.isArray(data?.items) ? data.items : []))
-        dispatch(setItems(extractedItems))
+        //const extractedItems = Array.isArray(data?.cart) ? data.cart : (Array.isArray(data?.cart?.items) ? data.cart.items : (Array.isArray(data?.items) ? data.items : []))
+        dispatch(setCart(data.cart))
     }
 
     async function handleIncrementCartItem({ productId, varientId }) {
         await incrementCartItemApi({ productId, varientId })
-        dispatch(incrementCartItem({ productId, varientId }))
+        await handleGetCart()
     }
 
     async function handleDecrementCartItem({ productId, varientId }) {
         await decrementCartItemApi({ productId, varientId })
-        dispatch(decrementCartItem({ productId, varientId }))
+        await handleGetCart()
     }
 
     async function handleRemoveCartItem({ productId, varientId }) {
         await removeCartItemApi({ productId, varientId })
-        dispatch(removeCartItem({ productId, varientId }))
+        await handleGetCart()
     }
 
     return { handleAddItem, handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem }

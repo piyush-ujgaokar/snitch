@@ -11,28 +11,15 @@ const Cart = () => {
         handleGetCart()
     }, [])
 
+    console.log(cart)
+
     // STRICT SAFETY CHECK: Force array to prevent `.map is not a function` error overlays
     const rawCartItems = cart?.Items || []
     const cartItems = Array.isArray(rawCartItems) ? rawCartItems : (Array.isArray(rawCartItems.items) ? rawCartItems.items : [])
 
-    const { subtotal, estimatedDelivery } = useMemo(() => {
-        let total = 0
-        cartItems.forEach(item => {
-            // Defensive extraction
-            const product = typeof item.product === 'object' ? item.product : (typeof item.productId === 'object' ? item.productId : null)
-            const variant = typeof item.varient === 'object' ? item.varient : (typeof item.varientId === 'object' ? item.varientId : null)
-
-            // Resolve price
-            const price = variant?.price?.amount || product?.price?.amount || item.price || 0
-            total += (price * (item.quantity || 1))
-        })
-        return {
-            subtotal: total,
-            estimatedDelivery: total > 0 ? 0 : 0 // Free delivery
-        }
-    }, [cartItems])
-
-    const total = subtotal + estimatedDelivery
+    const subtotal = cart.totalPrice || 0;
+    const estimatedDelivery = subtotal > 0 ? 0 : 0; // Free delivery
+    const total = subtotal + estimatedDelivery;
 
     if (!cartItems || cartItems.length === 0) {
         return (
@@ -68,15 +55,17 @@ const Cart = () => {
 
                             const product = typeof item.product === 'object' ? item.product : (typeof item.productId === 'object' ? item.productId : {});
 
-                            // product.varients is expected to be an array on the populated product
+                            // product.varients might be an array or a single object (if unwound by backend aggregation)
                             const productVarients = Array.isArray(product?.varients) ? product.varients : []
 
                             // Resolve the selected variant object (if any)
                             let variant = null
-                            if (item.varient && typeof item.varient === 'object') variant = item.varient
-                            else if (item.varientId && typeof item.varientId === 'object') variant = item.varientId
+                            if (item.varient && typeof item.varient === 'object' && item.varient.price) variant = item.varient
+                            else if (item.varientId && typeof item.varientId === 'object' && item.varientId.price) variant = item.varientId
                             else if (vId && productVarients.length) {
                                 variant = productVarients.find(v => String(v._id) === String(vId)) || null
+                            } else if (vId && product?.varients && !Array.isArray(product.varients) && String(product.varients._id) === String(vId)) {
+                                variant = product.varients;
                             }
 
                             const title = product?.title || 'Unknown Product';

@@ -1,6 +1,7 @@
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
 import {stockOfVarient} from "../dow/product.dow.js";
+import mongoose from "mongoose";
 
 export const addToCart=async (req,res)=>{
 
@@ -95,7 +96,69 @@ export const addToCart=async (req,res)=>{
 export const getCart=async(req,res)=>{
     const user=req.user
 
-    let cart=await cartModel.findOne({user:user._id}).populate("items.product")
+    let cart=(await cartModel.aggregate([
+    {
+      $match: {
+        user: new mongoose.Types.ObjectId(user._id)
+      }
+    },
+    { $unwind: { path: '$items' } },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'items.product',
+        foreignField: '_id',
+        as: 'items.product'
+      }
+    },
+    { $unwind: { path: '$items.product' } },
+    {
+      $addFields: {
+        'items.product.varients': {
+          $filter: {
+            input: { $ifNull: ['$items.product.varients', []] },
+            as: 'v',
+            cond: { $eq: ['$$v._id', '$items.varient'] }
+          }
+        }
+      }
+    },
+    {
+      $addFields: {
+        itemPrice: {
+          price: {
+            $multiply: [
+              '$items.quantity',
+              {
+                $cond: {
+                  if: { $gt: [{ $size: '$items.product.varients' }, 0] },
+                  then: { $arrayElemAt: ['$items.product.varients.price.amount', 0] },
+                  else: { $ifNull: ['$items.product.price.amount', 0] }
+                }
+              }
+            ]
+          },
+          currency: {
+            $cond: {
+              if: { $gt: [{ $size: '$items.product.varients' }, 0] },
+              then: { $arrayElemAt: ['$items.product.varients.price.currency', 0] },
+              else: { $ifNull: ['$items.product.price.currency', 'INR'] }
+            }
+          }
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id',
+        totalPrice: { $sum: '$itemPrice.price' },
+        currency: {
+          $first: '$itemPrice.currency'
+        },
+        items: { $push: '$items' }
+      }
+    }
+    ]))[0]
 
     if(!cart){
         cart=await cartModel.create({user:user._id})
