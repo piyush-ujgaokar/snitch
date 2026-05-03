@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useCart } from '../hooks/useCart'
-import { Link } from 'react-router' // or react-router-dom
+import { Link, useNavigate } from 'react-router' // or react-router-dom
 import { useRazorpay } from "react-razorpay";
 
 const Cart = () => {
     const cart = useSelector(state => state.cart)
    const { error, isLoading, Razorpay } = useRazorpay();
-    const { handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem, handleCreateCartOrder } = useCart()
+    const { handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem, handleCreateCartOrder, handleVerifyCartOrder } = useCart()
     const user=useSelector(state=>state.auth.user)
+    const navigate=useNavigate()
+
 
     console.log(user)
 
@@ -39,10 +41,14 @@ const Cart = () => {
       name: "Fab_Mens",
       description: "Test Transaction",
       order_id: order.id, // Generate order_id on server
-      handler: (response) => {
-        console.log(response);
-        alert("Payment Successful!");
-      },
+      handler:async (response) => {
+        const isValid=await handleVerifyCartOrder(response)
+        if(isValid){
+            navigate(`/order-success?order_id=${response?.razorpay_order_id}`)
+        }
+
+        console.log(response)
+      },    
       prefill: {
         name: user?.fullname,
         email: user?.email,

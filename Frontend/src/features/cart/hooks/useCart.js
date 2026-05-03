@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { addItem, createCartOrder, decrementCartItemApi, getCartItems, incrementCartItemApi, removeCartItemApi } from "../service/cart.api";
+import { addItem, createCartOrder, decrementCartItemApi, getCartItems, incrementCartItemApi, removeCartItemApi, verifyCartOrder, getPaymentDetails } from "../service/cart.api";
 import { setCart } from "../state/cart.slice";
 
 export const useCart = () => {
@@ -37,5 +37,15 @@ export const useCart = () => {
         return data.order
     }
 
-    return { handleAddItem, handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem, handleCreateCartOrder }
+    async function handleVerifyCartOrder({razorpay_order_id,razorpay_payment_id,razorpay_signature}){
+        const data=await verifyCartOrder({razorpay_order_id,razorpay_payment_id,razorpay_signature})
+        return data.success
+    }
+
+    async function handleGetPaymentDetails(orderId) {
+        const data = await getPaymentDetails(orderId)
+        return data.order
+    }
+
+    return { handleAddItem, handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem, handleCreateCartOrder, handleVerifyCartOrder, handleGetPaymentDetails }
 }
