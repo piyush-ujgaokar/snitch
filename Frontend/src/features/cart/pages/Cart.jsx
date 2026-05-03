@@ -1,17 +1,22 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useCart } from '../hooks/useCart'
 import { Link } from 'react-router' // or react-router-dom
+import { useRazorpay } from "react-razorpay";
 
 const Cart = () => {
     const cart = useSelector(state => state.cart)
-    const { handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem } = useCart()
+   const { error, isLoading, Razorpay } = useRazorpay();
+    const { handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem, handleCreateCartOrder } = useCart()
+    const user=useSelector(state=>state.auth.user)
+
+    console.log(user)
 
     useEffect(() => {
         handleGetCart()
     }, [])
 
-    console.log(cart)
+  console.log(cart)
 
     // STRICT SAFETY CHECK: Force array to prevent `.map is not a function` error overlays
     const rawCartItems = cart?.Items || []
@@ -20,6 +25,38 @@ const Cart = () => {
     const subtotal = cart.totalPrice || 0;
     const estimatedDelivery = subtotal > 0 ? 0 : 0; // Free delivery
     const total = subtotal + estimatedDelivery;
+
+    
+
+    async function handleCheckOut(){
+        const order=await handleCreateCartOrder({amount:total, currency:"INR"})
+        console.log(order)
+        
+         const options= {
+      key:"rzp_test_SkZrinOULjKxnh" ,
+      amount: order.amount, // Amount in paise
+      currency: order.currency,
+      name: "Fab_Mens",
+      description: "Test Transaction",
+      order_id: order.id, // Generate order_id on server
+      handler: (response) => {
+        console.log(response);
+        alert("Payment Successful!");
+      },
+      prefill: {
+        name: user?.fullname,
+        email: user?.email,
+        contact: user?.contact,
+      },
+      theme: {
+        color: "#F37254",
+      },
+    };
+
+    const razorpayInstance = new Razorpay(options);
+    razorpayInstance.open();
+    }
+
 
     if (!cartItems || cartItems.length === 0) {
         return (
@@ -177,7 +214,8 @@ const Cart = () => {
                             <span className="text-2xl font-bold tracking-widest" style={{ fontFamily: 'Epilogue, sans-serif' }}>INR {total.toLocaleString('en-IN')}</span>
                         </div>
 
-                        <button className="w-full py-5 bg-[#000000] text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 cursor-pointer">
+                        <button className="w-full py-5 bg-[#000000] text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 cursor-pointer"
+                        onClick={handleCheckOut}>
                             Secure Checkout
                         </button>
 

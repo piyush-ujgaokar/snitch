@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
-import { addItem, decrementCartItemApi, getCartItems, incrementCartItemApi, removeCartItemApi } from "../service/cart.api";
-import { decrementCartItem, incrementCartItem, removeCartItem, setCart } from "../state/cart.slice";
+import { addItem, createCartOrder, decrementCartItemApi, getCartItems, incrementCartItemApi, removeCartItemApi } from "../service/cart.api";
+import { setCart } from "../state/cart.slice";
 
 export const useCart = () => {
     const dispatch = useDispatch();
@@ -32,6 +32,10 @@ export const useCart = () => {
         await handleGetCart()
     }
 
-    return { handleAddItem, handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem }
+    async function handleCreateCartOrder({amount,currency}){
+        const data=await createCartOrder({amount,currency})
+        return data.order
+    }
 
+    return { handleAddItem, handleGetCart, handleIncrementCartItem, handleDecrementCartItem, handleRemoveCartItem, handleCreateCartOrder }
 }
