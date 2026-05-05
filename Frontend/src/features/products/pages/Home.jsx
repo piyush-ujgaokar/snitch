@@ -9,6 +9,7 @@ const Home = () => {
   const { handleGetAllProducts } = useProduct()
   const products = useSelector(state => state.product.products) || []
   const navigate = useNavigate()
+  const user = useSelector(state => state.auth.user)
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredProducts = useMemo(() => {
@@ -72,9 +73,30 @@ const Home = () => {
               )}
             </div>
 
-            <button onClick={()=>{navigate('/login')}} className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors" aria-label="Account">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"></path></svg>
-            </button>
+            <div className="relative group">
+              <button onClick={() => { navigate(user ? '/register' : '/login') }} className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors" aria-label="Account">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"></path></svg>
+              </button>
+              <div className="absolute right-0 top-full mt-3 w-64 bg-white border border-[#e8e8e8] rounded-md shadow-lg p-3 text-sm text-black opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
+                <div className="min-h-[42px] flex flex-col justify-center">
+                  <span className="font-bold tracking-widest uppercase text-black">Account</span>
+                </div>
+                <div className="h-px bg-[#f0f0f0] my-2"></div>
+                <div className="text-xs text-[#474747]">
+                  {user ? (
+                    <>
+                      <p className="font-semibold truncate">{user.fullname || user.name || 'User'}</p>
+                      <p className="truncate mt-1">{user.email}</p>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <p className="font-semibold">Not signed in</p>
+                      <button onClick={() => navigate('/login')} className="text-xs text-[#1b1b1b] font-bold tracking-widest uppercase">Login</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
             <button onClick={()=>{ navigate('/cart') }} className="text-[#1b1b1b] hover:text-[#777777] transition-colors relative group cursor-pointer" aria-label="Cart">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             </button>
