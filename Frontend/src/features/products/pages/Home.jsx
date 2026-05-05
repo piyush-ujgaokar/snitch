@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useProduct } from '../hooks/useProduct'
 import { setProducts } from '../state/product.slice'
@@ -9,6 +9,18 @@ const Home = () => {
   const { handleGetAllProducts } = useProduct()
   const products = useSelector(state => state.product.products) || []
   const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredProducts = useMemo(() => {
+    const q = String(searchQuery || '').trim().toLowerCase()
+    if (!q) return products
+    return products.filter(p => {
+      const title = (p.title || '').replace(/_/g, ' ').toLowerCase()
+      const desc = (p.description || '').toLowerCase()
+      const sku = (p.sku || '').toLowerCase()
+      return title.includes(q) || desc.includes(q) || sku.includes(q)
+    })
+  }, [products, searchQuery])
 
   useEffect(() => {
     handleGetAllProducts()
@@ -45,17 +57,25 @@ const Home = () => {
             </h1>
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-6 lg:gap-8">
-            <button className="text-[#1b1b1b] hover:text-[#777777] transition-colors" aria-label="Search">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z"></path></svg>
-            </button>
-            <button className="text-[#1b1b1b] hover:text-[#777777] transition-colors" aria-label="Account">
+          {/* Right: Actions + Search */}
+          <div className="flex items-center gap-4 lg:gap-6">
+            <div className="relative hidden sm:flex items-center w-[260px]">
+              <svg className="w-4 h-4 absolute left-3 text-[#777777]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z"></path></svg>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products"
+                className="w-full pl-10 pr-10 py-2 text-xs border border-[#e8e8e8] rounded-md placeholder:uppercase placeholder:tracking-widest focus:outline-none focus:ring-0"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-2 text-[#777777] text-xs uppercase tracking-widest">Clear</button>
+              )}
+            </div>
+
+            <button onClick={()=>{navigate('/login')}} className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors" aria-label="Account">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"></path></svg>
             </button>
-            <button onClick={()=>{
-                          navigate('/cart')
-                        }} className="text-[#1b1b1b] hover:text-[#777777] transition-colors relative group cursor-pointer" aria-label="Cart">
+            <button onClick={()=>{ navigate('/cart') }} className="text-[#1b1b1b] hover:text-[#777777] transition-colors relative group cursor-pointer" aria-label="Cart">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             </button>
           </div>
@@ -98,13 +118,17 @@ const Home = () => {
           </button>
         </div>
 
-        {products.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="w-full py-32 flex justify-center border border-[#e8e8e8]">
-            <p className="text-sm font-bold tracking-widest text-[#777777] uppercase">Loading Collection...</p>
+            {products.length === 0 ? (
+              <p className="text-sm font-bold tracking-widest text-[#777777] uppercase">Loading Collection...</p>
+            ) : (
+              <p className="text-sm font-bold tracking-widest text-[#777777] uppercase">No results found</p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <article
                 onClick={() => { navigate(`/product/${product._id}`) }}
                 key={product._id} className="group cursor-pointer">

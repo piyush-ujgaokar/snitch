@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { useRef } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router'
+import { useSelector } from 'react-redux'
+import AuthPrompt from '../../../components/AuthPrompt'
 import { useProduct } from '../hooks/useProduct'
 import { useCart } from '../../cart/hooks/useCart'
 
@@ -10,10 +11,12 @@ const ProductDetails = () => {
   const { productId } = useParams()
   const { handleGetProductDetails } = useProduct()
   const { handleAddItem } = useCart()
+  const user = useSelector(state => state.auth.user)
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-const navigate=useNavigate()
+  const navigate = useNavigate()
   const [selectedAttributes, setSelectedAttributes] = useState({})
 
   async function fetchedProductDetail() {
@@ -55,7 +58,7 @@ const navigate=useNavigate()
   const attributesRef = useRef(null)
 
   const scrollToAttributes = () => {
-    if(attributesRef.current){
+    if (attributesRef.current) {
       attributesRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }
@@ -160,9 +163,9 @@ const navigate=useNavigate()
             </Link>
           </div>
           <div className="flex items-center gap-6">
-            <button onClick={()=>{
-                          navigate('/cart')
-                        }}  className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors relative group" aria-label="Cart">
+            <button onClick={() => {
+              navigate('/cart')
+            }} className="text-[#1b1b1b] cursor-pointer hover:text-[#777777] transition-colors relative group" aria-label="Cart">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             </button>
           </div>
@@ -284,40 +287,48 @@ const navigate=useNavigate()
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 mt-8 pb-8">
-                {/* Buy Now: always visible; disabled only when truly out of stock */}
-                <button
-                  className="cursor-pointer w-full py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => {
-                    const isOutOfStock = variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)
-                    if (isOutOfStock) return
-                    // TODO: implement buy flow (navigate to checkout with item)
-                  }}
-                  disabled={variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)}
-                >
-                  {(variants.length > 0 ? (currentVariant ? (currentVariant.stock === 0 ? 'Out of Stock' : 'Buy Now') : 'Buy Now') : (product.stock === 0 ? 'Out of Stock' : 'Buy Now'))}
-                </button>
+              {/* Buy Now: always visible; disabled only when truly out of stock */}
+              <button
+                className="cursor-pointer w-full py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-[0.2em] uppercase border border-black hover:bg-[#2b2b2b] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  const isOutOfStock = variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)
+                  if (isOutOfStock) return
+                  // TODO: implement buy flow (navigate to checkout with item)
+                }}
+                disabled={variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)}
+              >
+                {(variants.length > 0 ? (currentVariant ? (currentVariant.stock === 0 ? 'Out of Stock' : 'Buy Now') : 'Buy Now') : (product.stock === 0 ? 'Out of Stock' : 'Buy Now'))}
+              </button>
 
-                {/* Add To Cart: always visible; adds main product when no variant selected */}
-                <button
-                  className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => {
-                    const isOutOfStock = variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)
-                    if (isOutOfStock) return
-                    handleAddItem({
-                      productId: product._id,
-                      varientId: currentVariant ? currentVariant._id : product._id
-                    })
-                  }}
-                  disabled={variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)}
-                >
-                  {(variants.length > 0 ? (currentVariant ? (currentVariant.stock === 0 ? 'Out of Stock' : 'Add To Cart') : 'Add To Cart') : (product.stock === 0 ? 'Out of Stock' : 'Add To Cart'))}
-                </button>
+              {/* Add To Cart: always visible; adds main product when no variant selected */}
+              <button
+                className="cursor-pointer w-full py-5 bg-white text-black text-xs font-bold tracking-[0.2em] uppercase border border-[#c6c6c6] hover:border-black transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  const isOutOfStock = variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)
+                  if (isOutOfStock) return
+                  if (!user) {
+                    setShowAuthPrompt(true)
+                    return
+                  }
+
+                  handleAddItem({
+                    productId: product._id,
+                    varientId: currentVariant ? currentVariant._id : product._id
+                  })
+                }}
+                disabled={variants.length > 0 ? (currentVariant ? currentVariant.stock === 0 : (product.stock === 0)) : (product.stock === 0)}
+              >
+                {(variants.length > 0 ? (currentVariant ? (currentVariant.stock === 0 ? 'Out of Stock' : 'Add To Cart') : 'Add To Cart') : (product.stock === 0 ? 'Out of Stock' : 'Add To Cart'))}
+              </button>
             </div>
 
           </div>
         </div>
 
       </main>
+      {showAuthPrompt && (
+        <AuthPrompt onClose={() => setShowAuthPrompt(false)} message={"Your are not Log In or register Please Login First"} />
+      )}
     </div>
   )
 }
