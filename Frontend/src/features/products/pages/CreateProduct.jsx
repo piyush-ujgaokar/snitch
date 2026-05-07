@@ -252,6 +252,7 @@
 
 import React, { useRef, useState } from 'react'
 import {useProduct} from '../hooks/useProduct'
+import { useNavigate } from 'react-router'
 
 
 const CreateProduct=()=>{
@@ -261,6 +262,7 @@ const CreateProduct=()=>{
   const [currency, setCurrency] = useState('INR')
   const [files, setFiles] = useState([])
   const fileInputRef = useRef(null)
+  const navigate=useNavigate()
 
   const {handleCreateProduct}=useProduct()
 
@@ -309,7 +311,7 @@ console.log(formData)
     try {
       // placeholder; update URL to your backend endpoint
       await handleCreateProduct(formData) // Implement this function to call your API
-      alert('Product created (mock)')
+      // alert('Product created (mock)')
     } catch (err) {
       console.error(err)
       alert('Submit failed')
@@ -406,6 +408,7 @@ console.log(formData)
             <div className="pt-8">
               <button 
                 type="submit"
+                onClick={()=>{navigate('/seller/dashboard')}}
                 className="w-full md:w-auto px-12 py-5 bg-black text-[#e2e2e2] text-xs font-bold tracking-widest uppercase border border-black hover:bg-transparent hover:text-black transition-all duration-500"
               >
                 List Product

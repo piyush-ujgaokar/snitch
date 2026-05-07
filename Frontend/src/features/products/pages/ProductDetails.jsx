@@ -310,7 +310,7 @@ const ProductDetails = () => {
                     setShowAuthPrompt(true)
                     return
                   }
-
+                  navigate('/cart')
                   handleAddItem({
                     productId: product._id,
                     varientId: currentVariant ? currentVariant._id : product._id

@@ -333,7 +333,9 @@ const Dashboard = () => {
               />
               <svg className="w-4 h-4 text-[#adabaa] absolute right-2 top-1 pointer-events-none group-focus-within:text-black transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="1.5" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z"></path></svg>
             </div>
-            <button className="px-8 py-3 bg-black text-[#e2e2e2] text-xs font-semibold tracking-widest uppercase border border-black hover:bg-[#5e5e5e] transition-colors duration-300">
+            <button 
+              onClick={()=>navigate('/seller/create-product')}
+            className="cursor-pointer px-8 py-3 bg-black text-[#e2e2e2] text-xs font-semibold tracking-widest uppercase border border-black hover:bg-[#5e5e5e] transition-colors duration-300">
               NEW LISTING
             </button>
           </div>

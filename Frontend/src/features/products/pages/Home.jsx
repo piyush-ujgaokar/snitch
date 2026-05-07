@@ -41,6 +41,12 @@ const Home = () => {
               Shop
               <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-black transition-all duration-300 group-hover:w-full"></span>
             </button>
+            {user?.role === 'seller' && (
+              <button onClick={() => navigate('/seller/dashboard')} className="cursor-pointer text-xs font-bold tracking-widest uppercase hover:text-[#777777] transition-colors relative group py-2">
+                Seller Dashboard
+                <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-black transition-all duration-300 group-hover:w-full"></span>
+              </button>
+            )}
             {/* <button className="text-xs font-bold tracking-widest uppercase hover:text-[#777777] transition-colors relative group py-2">
                             Collections
                             <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-black transition-all duration-300 group-hover:w-full"></span>
